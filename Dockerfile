@@ -1,5 +1,5 @@
 # Use an official Node runtime as a parent image
-FROM registry.cn-hangzhou.aliyuncs.com/docker_hub_choco/node:20
+FROM node:20
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
