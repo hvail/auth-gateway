@@ -27,6 +27,5 @@ jobs:
         context: .
         file: Dockerfile
         push: true
-        tags: 
-          - registry.cn-shenzhen.aliyuncs.com/lib-choco/com.choco.power-oauth2:callback
+        tags: registry.cn-shenzhen.aliyuncs.com/lib-choco/com.choco.power-oauth2:callback
 
