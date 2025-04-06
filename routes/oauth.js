@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
-var fetch = require('node-fetch');
+// var fetch = require('node-fetch');
+// import fetch from 'node-fetch';
 
 var client_ids = [
     {
@@ -36,6 +37,8 @@ router.get('/callback', async (req, res, next) => {
         body: `grant_type=authorization_code&code=${code}&redirect_uri=${redirect_uri}`
     });
     let data = await response.json();
+    console.log('Basic ' + Buffer.from(`${client_id}:${client_secret}`).toString('base64'))
+    console.log(`grant_type=authorization_code&code=${code}&redirect_uri=${redirect_uri}`);
     console.log(data);
 
     res.send({ "msg": "ok" , data: data})
