@@ -17,7 +17,6 @@ var client_ids = [
 
 router.get('/callback', async (req, res, next) => {
     console.log(req.query);
-    console.log(req.body);
     let { code, state, error } = req.query;
     let { client_id, client_secret, redirect_uri } = client_ids.find(item => item.client_id === 'ai-manager-client-dev') || {};
     if (error) {
@@ -38,7 +37,7 @@ router.get('/callback', async (req, res, next) => {
     });
     let data = await response.json();
     console.log('Basic ' + Buffer.from(`${client_id}:${client_secret}`).toString('base64'))
-    console.log(`grant_type=authorization_code&code=${code}&redirect_uri=${redirect_uri}`);
+    console.log(`grant_type=authorization_code&code=${code}&redirect_uri=${redirect_uri}`, client_id, client_secret, redirect_uri);
     console.log(data);
 
     res.send({ "msg": "ok" , data: data})
