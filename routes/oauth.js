@@ -36,12 +36,7 @@ router.get('/callback', async (req, res, next) => {
         body: `grant_type=authorization_code&code=${code}&redirect_uri=${redirect_uri}`
     });
     let data = await response.json();
-    // Save data to SessionStorage
-
-    res.render('oauth', { data: data });
-
-    // sessionStorage.setItem('data', JSON.stringify(data));
-    // res.send({ "msg": "ok" , data: data})
+    res.render('oauth', { data: JSON.stringify(data) });
 });
 
 module.exports = router;

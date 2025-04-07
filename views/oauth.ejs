@@ -10,7 +10,8 @@
     <script src="path/to/your/js/file.js"></script>
     
     <script>
-        var data = "<%= JSON.stringify(data) %>";
+        var dataStr = "<%= data %>";
+        var data = JSON.parse(dataStr); // Parse the JSON string into a JavaScript object
         console.log(data); // This will log the data to the console
         // Use the 'data' variable in your JavaScript code
     </script>
