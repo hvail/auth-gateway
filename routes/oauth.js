@@ -37,8 +37,11 @@ router.get('/callback', async (req, res, next) => {
     });
     let data = await response.json();
     // Save data to SessionStorage
-    sessionStorage.setItem('data', JSON.stringify(data));
-    res.send({ "msg": "ok" , data: data})
+
+    res.render('oauth', { data: data });
+
+    // sessionStorage.setItem('data', JSON.stringify(data));
+    // res.send({ "msg": "ok" , data: data})
 });
 
 module.exports = router;
