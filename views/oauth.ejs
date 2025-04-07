@@ -10,17 +10,12 @@
     <p>Thank you for authorizing the application.</p>
 
     <script>
-        // const decodedStr = encodedStr.replace(/&#(\d+);/g, (match, dec) => {
-        //     return String.fromCharCode(dec);
-        // });
-
         var dataStr = "<%= data %>".replace(/&#(\d+);/g, (match, dec) => {
             return String.fromCharCode(dec);
         });
-        console.log(dataStr); // This will log the data to the console
-        var data = JSON.parse(dataStr); // Parse the JSON string into a JavaScript object
-        console.log(data); // This will log the data to the console
-        // Use the 'data' variable in your JavaScript code
+        console.log(dataStr); 
+        var data = JSON.parse(dataStr); 
+        console.log(data); 
     </script>
 </body>
 
