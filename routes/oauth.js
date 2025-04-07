@@ -36,10 +36,8 @@ router.get('/callback', async (req, res, next) => {
         body: `grant_type=authorization_code&code=${code}&redirect_uri=${redirect_uri}`
     });
     let data = await response.json();
-    console.log('Basic ' + Buffer.from(`${client_id}:${client_secret}`).toString('base64'))
-    console.log(`grant_type=authorization_code&code=${code}&redirect_uri=${redirect_uri}`, client_id, client_secret, redirect_uri);
-    console.log(data);
-
+    // Save data to SessionStorage
+    sessionStorage.setItem('data', JSON.stringify(data));
     res.send({ "msg": "ok" , data: data})
 });
 
