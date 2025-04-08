@@ -15,8 +15,8 @@
         });
         console.log(dataStr);
         var data = JSON.parse(dataStr);
-        localStorage.setItem('auth_info', data)
-        window.replace(
+        localStorage.setItem('auth_info', JSON.stringify(data))
+        location.replace(
             "/dashboard/index"
         );
     </script>
