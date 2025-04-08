@@ -13,11 +13,11 @@
         var dataStr = "<%= data %>".replace(/&#(\d+);/g, (match, dec) => {
             return String.fromCharCode(dec);
         });
-        console.log(dataStr); 
-        var data = JSON.parse(dataStr); 
-        console.log(data); 
+        console.log(dataStr);
+        var data = JSON.parse(dataStr);
+        localStorage.setItem('auth_info', data)
         window.replace(
-            "/#/"
+            "/dashboard/index"
         );
     </script>
 </body>
