@@ -98,7 +98,7 @@
 <script>
   const queryParams = {
     state: crypto.randomUUID(),
-    redirect_uri: encodeURIComponent(`${location.origin}/login/callback`),
+    redirect_uri: encodeURIComponent(`${location.origin}/oauth/login`),
     client_id: 'ai-manager-client',
     response_type: 'code',
     scope: encodeURIComponent('message openid')
