@@ -39,4 +39,8 @@ router.get('/callback', async (req, res, next) => {
     res.render('oauth', { data: JSON.stringify(data) });
 });
 
+router.get('/logout', async (req, res, next) => {
+    res.render('logout')
+})
+
 module.exports = router;
