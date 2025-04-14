@@ -18,7 +18,7 @@ var client_ids = [
 router.get('/login', async (req, res, next) => {
     console.log(req.query);
     let { code, state, error } = req.query;
-    let { client_id, client_secret, redirect_uri } = client_ids.find(item => item.client_id === 'ai-manager-client-dev') || {};
+    let { client_id, client_secret, redirect_uri } = client_ids.find(item => item.client_id === 'ai-manager-client') || {};
     if (error) {
         console.log(error);
         return res.status(500).send({ "msg": error });
