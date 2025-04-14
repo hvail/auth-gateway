@@ -7,7 +7,7 @@ var client_ids = [
     {
         client_id: 'ai-manager-client-dev',
         client_secret: 'ai@choco',
-        redirect_uri: 'http://192.168.1./oauth/callback'
+        redirect_uri: 'http://192.168.1.80:8848/oauth/login'
     }, {
         client_id: 'ai-manager-client',
         client_secret: 'ai_choco',
@@ -18,7 +18,7 @@ var client_ids = [
 router.get('/login', async (req, res, next) => {
     console.log(req.query);
     let { code, state, error } = req.query;
-    let { client_id, client_secret, redirect_uri } = client_ids.find(item => item.client_id === 'ai-manager-client') || {};
+    let { client_id, client_secret, redirect_uri } = client_ids.find(item => item.client_id === 'ai-manager-client-dev') || {};
     if (error) {
         console.log(error);
         return res.status(500).send({ "msg": error });
