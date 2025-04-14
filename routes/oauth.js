@@ -11,7 +11,7 @@ var client_ids = [
     }, {
         client_id: 'ai-manager-client',
         client_secret: 'ai_choco',
-        redirect_uri: 'https://iot.hunanxiaoya.com/login/callback'
+        redirect_uri: 'https://iot.hunanxiaoya.com/oauth/login'
     }
 ]
 
