@@ -6,11 +6,11 @@ var router = express.Router();
 var client_ids = [
     {
         client_id: 'ai-manager-client-dev',
-        client_secret: 'ai@choco',
+        client_secret: 'ai-choco-dev',
         redirect_uri: 'http://192.168.1.80:8848/oauth/login'
     }, {
         client_id: 'ai-manager-client',
-        client_secret: 'ai_choco',
+        client_secret: 'ai-choco',
         redirect_uri: 'https://iot.hunanxiaoya.com/oauth/login'
     }
 ]
