@@ -14,7 +14,7 @@ var client_ids = [
     },
     {
         client_id: 'ai-manager-client',
-        client_secret: 'ai@choco',
+        client_secret: 'ai_choco',
         redirect_uri: 'http://ai.hrm2m.com/oauth/callback',
         client_redirect_uri: 'http://ai.hrm2m.com/oauth/login'
     },
