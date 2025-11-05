@@ -1,9 +1,9 @@
 var express = require('express');
 var router = express.Router();
-// var fetch = require('node-fetch');
-// import fetch from 'node-fetch';
 
 var authorize_host = 'https://oauth2.zshaojie.com';
+
+var state_map = new Map();
 
 var client_ids = [
     {
@@ -11,6 +11,12 @@ var client_ids = [
         client_secret: 'ai@choco',
         redirect_uri: 'http://localhost:8848/oauth/callback',
         client_redirect_uri: 'http://localhost:8848/oauth/login'
+    },
+    {
+        client_id: 'ai-manager-client',
+        client_secret: 'ai@choco',
+        redirect_uri: 'http://ai.hrm2m.com/oauth/callback',
+        client_redirect_uri: 'http://ai.hrm2m.com/oauth/login'
     },
     {
         client_id: 'oauth-express-simple-3',
@@ -24,16 +30,19 @@ var client_ids = [
 ]
 
 router.get('/authorize', (req, res, next) => { 
-    let {state , client_id} = req.query;
+    let {client_id} = req.query;
     console.log("authorize params:", req.query);
+    let state = Math.random().toString(36).slice(2);
+    state_map.set(state, { timestamp: Date.now(), client_id: client_id });
     let { redirect_uri } = client_ids.find(item => item.client_id === client_id) || {};
-    res.redirect(`${authorize_host}/oauth2/authorize?response_type=code&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=openid device`);``
+    res.redirect(`${authorize_host}/oauth2/authorize?state=${state}&response_type=code&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=openid device`);``
 });
 
 router.get('/callback', async (req, res, next) => {
     // console.log(req.query);
     let { code, state, error } = req.query;
-    let { client_id, client_secret, redirect_uri, client_redirect_uri } = client_ids.find(item => item.client_id === 'ai-manager-client-dev') || {};
+    let client_info = state_map.get(state) || {};
+    let { client_id, client_secret, redirect_uri, client_redirect_uri } = client_ids.find(item => item.client_id === client_info.client_id) || {};
     console.log("callback params:", req.query);
     console.log("client info:", { client_id, redirect_uri });
     if (error) {
