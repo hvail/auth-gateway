@@ -22,10 +22,10 @@ var client_ids = [
         client_id: 'oauth-express-simple-3',
         client_secret: 'demo@2025',
         redirect_uri: 'http://localhost:3000/oauth/callback'
-    }, {
-        client_id: 'ai-manager-client',
-        client_secret: 'ai_choco',
-        redirect_uri: 'https://iot.hunanxiaoya.com/login/callback'
+    // }, {
+    //     client_id: 'ai-manager-client',
+    //     client_secret: 'ai_choco',
+    //     redirect_uri: 'https://iot.hunanxiaoya.com/login/callback'
     }
 ]
 
