@@ -9,6 +9,53 @@
     <h1>Authorization Result</h1>
     <p>Thank you for authorizing the application.</p>
 
+    <div>
+        <h2>Token Details</h2>
+        <table id="tokenTable" border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align:left">Key</th>
+                    <th style="text-align:left">Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>access_token</td><td id="access_token"><%= data.access_token %></td></tr>
+                <tr><td>refresh_token</td><td id="refresh_token"><%= data.refresh_token %></td></tr>
+                <tr><td>token_type</td><td id="token_type"><%= data.token_type %></td></tr>
+                <tr><td>expires_in</td><td id="expires_in"><%= data.expires_in %></td></tr>
+                <tr><td>scope</td><td id="scope"><%= data.scope %></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Raw JSON</h3>
+        <pre id="raw_json" style="white-space:pre-wrap; background:#f8f8f8; padding:8px; border:1px solid #ddd;"><%= msg %></pre>
+    </div>
+
+    <!-- <script>
+        (function waitAndPopulate(){
+            var keys = ['access_token','refresh_token','token_type','expires_in','scope'];
+            function populate(d){
+                if(!d) return;
+                keys.forEach(function(k){
+                    var el = document.getElementById(k);
+                    if(el) el.textContent = d[k] !== undefined ? d[k] : '—';
+                });
+                var raw = document.getElementById('raw_json');
+                if(raw) raw.textContent = JSON.stringify(d, null, 2);
+            }
+
+            var attempts = 0, maxAttempts = 100;
+            (function poll(){
+                // data will be created by the following script block (global var)
+                if(window.data){
+                    populate(window.data);
+                } else if (attempts++ < maxAttempts){
+                    setTimeout(poll, 100);
+                }
+            })();
+        })();
+    </script> -->
+
     <script>
         var dataStr = "<%= data %>".replace(/&#(\d+);/g, (match, dec) => {
             return String.fromCharCode(dec);
