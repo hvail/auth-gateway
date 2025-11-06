@@ -8,12 +8,6 @@ var authorize_host = 'https://oauth2.zshaojie.com';
 
 // var state_map = new Map();
 var redisClient = new RedisClient();
-// var redisClient = new RedisClient({
-//     url: 'redis://r-bp1l39mzzgh9xcvsf7pd.redis.rds.aliyuncs.com:6379',
-//     database: 12,
-//     username: 'r-bp1l39mzzgh9xcvsf7',
-//     password: 'hrm2m@2025'
-// });
 
 var client_ids = [
     {
@@ -38,37 +32,39 @@ var client_ids = [
 ]
 
 router.get('/logout', async (req, res, next) => {
-    let { oauth_data } = req.cookies;
+    let { oauth_data, oauth_state } = req.cookies;
     let { state, redirect_uri, id_token_hint } = req.query;
-    console.log("state:", state);
+    console.log("state:", state || oauth_state);
     if (!state && !id_token_hint) {
-        console.log("auth call logout params:", req.query);
         if (oauth_data) {
             let { state } = JSON.parse(oauth_data);
             res.clearCookie('oauth_data', { path: '/' });
-            let web_redirect_url = await redisClient.get(`oauth:${state}:logout:redirect_url`);
+            res.clearCookie('oauth_state', { path: '/' });
+            let web_redirect_url = await redisClient.get(`oauth:${oauth_state}:logout:redirect_url`);
+            // 删除Redis中的Token信息
+            await redisClient.set(`oauth:${oauth_state}:client_id`, '', { EX: 1 });
+            await redisClient.set(`oauth:${oauth_state}:data`, '', { EX: 1 });
+            await redisClient.set(`oauth:${oauth_state}:client`, '', { EX: 1 });
+            await redisClient.set(`oauth:${oauth_state}:refresh`, '', { EX: 1 });
+            console.log("redirect to:", web_redirect_url || '/');
             res.redirect(web_redirect_url || '/');
             return;
         }
     } else if (state) {
         console.log("logout by state params:", req.query);
         let client_id = await redisClient.get(`oauth:${state}:client_id`);
-        let oauth_data_end = await redisClient.get(`oauth:${state}:data`);
+        let oauth_data_end = await redisClient.getJSON(`oauth:${state}:data`);
         if (oauth_data_end) {
-            // await redisClient.del(`oauth:${state}:data`);
             let { id_token, refresh_token } = oauth_data_end;
             let { logout_redirect_uri } = client_ids.find(item => item.client_id === client_id) || {};
-            console.log("logout params:", req.query);
-            console.log("client info:", { client_id, logout_redirect_uri });
             if (redirect_uri) {
                 await redisClient.set(`oauth:${state}:logout:redirect_url`, redirect_uri, { EX: 60 });
             }
+            console.log("redirect to logout url:", `${authorize_host}/connect/logout?id_token_hint=${id_token}&post_logout_redirect_uri=${logout_redirect_uri}`);
             res.redirect(`${authorize_host}/connect/logout?id_token_hint=${id_token}&post_logout_redirect_uri=${logout_redirect_uri}`);
             return;
         }
     } else if (id_token_hint) {
-        console.log("logout by id_token_hint params:", req.query);
-        console.log("redirect to logout url:", `${authorize_host}/connect/logout?id_token_hint=${id_token_hint}`);
         res.redirect(`${authorize_host}/connect/logout?id_token_hint=${id_token_hint}`);
         return;
     }
@@ -77,12 +73,17 @@ router.get('/logout', async (req, res, next) => {
 });
 
 router.get('/authorize', async (req, res, next) => {
-    let { client_id } = req.query;
+    let { client_id, state } = req.query;
+    if (state) {
+        // 如果有state参数，那就读取state对应的refresh_token，然后重新请求token
+        let refresh_token = await redisClient.get(`oauth:${state}:refresh`);
+        let client_id_stored = await redisClient.get(`oauth:${state}:client_id`);
+    }
     console.log("authorize params:", req.query);
-    let state = Math.random().toString(36).slice(2);
-    await redisClient.set(`oauth:${state}:client_id`, client_id, { EX: 3600 * 24 });
+    let _state = Math.random().toString(36).slice(2);
+    await redisClient.set(`oauth:${_state}:client_id`, client_id, { EX: 3600 * 24 });
     let { redirect_uri } = client_ids.find(item => item.client_id === client_id) || {};
-    res.redirect(`${authorize_host}/oauth2/authorize?state=${state}&response_type=code&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=openid device`); ``
+    res.redirect(`${authorize_host}/oauth2/authorize?state=${_state}&response_type=code&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=openid device`); ``
 });
 
 router.get('/callback', async (req, res, next) => {
@@ -116,7 +117,8 @@ router.get('/callback', async (req, res, next) => {
         console.log("ttl:", ttlSeconds);
         await redisClient.set(`oauth:${state}:data`, JSON.stringify(data), { EX: ttlSeconds });
         await redisClient.set(`oauth:${state}:client`, data.access_token, { EX: ttlSeconds });
-        await redisClient.set(`oauth:${state}:refresh`, data.refresh_token, { EX: 30 * 24 * 60 * 60 });
+        await redisClient.set(`oauth:${state}:refresh`, data.refresh_token, { EX: 7 * 24 * 3600 });
+        await redisClient.set(`oauth:${state}:client_id`, client_id, { EX: 3600 * 24 * 7 });
 
     } catch (err) {
         console.error('Failed to save oauth data to redis', err);
@@ -125,13 +127,18 @@ router.get('/callback', async (req, res, next) => {
 
     try {
         const maxAge = (expires_in ? Number(expires_in) * 1000 : 24 * 60 * 60 * 1000);
-        res.cookie('oauth_data', JSON.stringify({ access_token, id_token, refresh_token, token_type, expires_in, scope, state }), {
+
+        var cookieOptions = {
             httpOnly: false,
             secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
             sameSite: 'Lax',
             maxAge,
             path: '/'
-        });
+        };
+
+        res.cookie('oauth_data', JSON.stringify({ access_token, id_token, token_type, expires_in, scope, state }), cookieOptions);
+        res.cookie('oauth_state', state, { ...cookieOptions, maxAge: 86400 * 7 * 1000 });
+
     } catch (err) {
         console.error('Failed to set oauth cookie', err);
     }

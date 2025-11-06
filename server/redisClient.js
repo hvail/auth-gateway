@@ -37,12 +37,23 @@ class RedisClient {
         }
     }
 
+    async getJSON(key) {
+        try {
+            const value = await this.get(key);
+            return value ? JSON.parse(value) : null;
+        } catch (err) {
+            console.error('Redis GET JSON error:', err);
+            throw err;
+        }
+    }
+
     async set(key, value, expireSeconds = null) {
         try {
             if (expireSeconds) {
                 await this.client.setEx(key, expireSeconds.EX, value);
             } else {
-                await this.client.set(key, value);
+                // Set a default expiration of 1 year if no expiration is provided
+                await this.client.setEx(key, 31_536_000, value);
             }
         } catch (err) {
             console.error('Redis SET error:', expireSeconds, err);
