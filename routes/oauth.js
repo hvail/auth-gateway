@@ -67,6 +67,20 @@ router.get('/callback', async (req, res, next) => {
     let data = await response.json();
     console.log(data);
     let {access_token, id_token, refresh_token, token_type, expires_in, scope} = data;
+
+    try {
+        const maxAge = (expires_in ? Number(expires_in) * 1000 : 24 * 60 * 60 * 1000);
+        res.cookie('oauth_data', JSON.stringify({ access_token, id_token, refresh_token, token_type, expires_in, scope }), {
+            httpOnly: true,
+            secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
+            sameSite: 'Lax',
+            maxAge,
+            path: '/'
+        });
+    } catch (err) {
+        console.error('Failed to set oauth cookie', err);
+    }
+
     res.redirect(`${client_redirect_uri}?access_token=${access_token}&id_token=${id_token}&scope=${scope}`);
 
     // res.render('oauth', { msg: JSON.stringify(data), data: data });
