@@ -2,7 +2,7 @@
 const { createClient } = require('redis');
 
 class RedisClient {
-    constructor(options = {}) {
+    constructor(options = null) {
         var _options = options || {
             url: process.env.REDIS_URL || 'redis://localhost:6379',
             database: parseInt(process.env.REDIS_DATABASE) || 0
