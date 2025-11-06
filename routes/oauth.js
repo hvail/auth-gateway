@@ -81,7 +81,7 @@ router.get('/callback', async (req, res, next) => {
     try {
         const maxAge = (expires_in ? Number(expires_in) * 1000 : 24 * 60 * 60 * 1000);
         res.cookie('oauth_data', JSON.stringify({ access_token, id_token, refresh_token, token_type, expires_in, scope, state }), {
-            httpOnly: true,
+            httpOnly: false,
             secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
             sameSite: 'Lax',
             maxAge,
