@@ -45,7 +45,7 @@ class RedisClient {
                 await this.client.set(key, value);
             }
         } catch (err) {
-            console.error('Redis SET error:', err);
+            console.error('Redis SET error:', expireSeconds, err);
             throw err;
         }
     }
