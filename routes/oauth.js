@@ -1,9 +1,13 @@
 var express = require('express');
+const { createClient } = require('redis');
+const RedisClient = require('../server/redisClient');
+
 var router = express.Router();
 
 var authorize_host = 'https://oauth2.zshaojie.com';
 
 var state_map = new Map();
+var redisClient = new RedisClient();
 
 var client_ids = [
     {
@@ -24,31 +28,48 @@ var client_ids = [
         client_id: 'oauth-express-simple-3',
         client_secret: 'demo@2025',
         redirect_uri: 'http://localhost:3000/oauth/callback'
-    // }, {
-    //     client_id: 'ai-manager-client',
-    //     client_secret: 'ai_choco',
-    //     redirect_uri: 'https://iot.hunanxiaoya.com/login/callback'
     }
 ]
 
-router.get('/logout', (req, res, next) => {
+router.get('/logout', async (req, res, next) => {
     let { oauth_data } = req.cookies;
-    console.log("logout oauth_data:", oauth_data);
-    if (oauth_data) {
-        let { state } = JSON.parse(oauth_data);
-        state_map.delete(state);
-        res.clearCookie('oauth_data', { path: '/' });
-        res.redirect('/');
+    let { state, redirect_uri } = req.query;
+    if (!state) {
+        if (oauth_data) {
+            let { state } = JSON.parse(oauth_data);
+            state_map.delete(state);
+            res.clearCookie('oauth_data', { path: '/' });
+            let web_redirect_url = await redisClient.get(`oauth:${state}:logout:redirect_url`);
+            res.redirect(web_redirect_url || '/');
+            return;
+        }
+    } else {
+        let client_info = state_map.get(state) || {};
+        let oauth_data = await redisClient.get(`oauth:${state}:data`);
+        if (oauth_data) {
+            await redisClient.del(`oauth:${state}:data`);
+            let { id_token, refresh_token } = oauth_data;
+            let { client_id, logout_redirect_uri } = client_ids.find(item => item.client_id === client_info.client_id) || {};
+            console.log("logout params:", req.query);
+            console.log("client info:", { client_id, logout_redirect_uri });
+            if (redirect_uri) {
+                await redisClient.set(`oauth:${state}:logout:redirect_url`, redirect_uri, { EX: 60 });
+            }
+            res.redirect(`${authorize_host}/connect/logout?id_token_hint=${id_token}&post_logout_redirect_uri=${logout_redirect_uri}`);
+            return;
+        }
     }
+    // 返回失败
+    res.send({ "msg": "state not found or invalid" });
 });
 
-router.get('/authorize', (req, res, next) => { 
-    let {client_id} = req.query;
+router.get('/authorize', (req, res, next) => {
+    let { client_id } = req.query;
     console.log("authorize params:", req.query);
     let state = Math.random().toString(36).slice(2);
     state_map.set(state, { timestamp: Date.now(), client_id: client_id });
     let { redirect_uri } = client_ids.find(item => item.client_id === client_id) || {};
-    res.redirect(`${authorize_host}/oauth2/authorize?state=${state}&response_type=code&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=openid device`);``
+    res.redirect(`${authorize_host}/oauth2/authorize?state=${state}&response_type=code&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=openid device`); ``
 });
 
 router.get('/callback', async (req, res, next) => {
@@ -76,7 +97,16 @@ router.get('/callback', async (req, res, next) => {
     let response = await fetch(`${authorize_host}/oauth2/token`, requestOptions);
     let data = await response.json();
     console.log(data);
-    let {access_token, id_token, refresh_token, token_type, expires_in, scope} = data;
+    try {
+
+        const ttlSeconds = data.expires_in ? Number(data.expires_in) : 24 * 60 * 60;
+        await redisClient.set(`oauth:${state}:data`, JSON.stringify(data), { EX: ttlSeconds });
+        await redisClient.set(`oauth:${state}:refresh`, data.refresh_token, { EX: 30 * 24 * 60 * 60 });
+
+    } catch (err) {
+        console.error('Failed to save oauth data to redis', err);
+    }
+    let { access_token, id_token, refresh_token, token_type, expires_in, scope } = data;
 
     try {
         const maxAge = (expires_in ? Number(expires_in) * 1000 : 24 * 60 * 60 * 1000);
