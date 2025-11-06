@@ -55,7 +55,7 @@ router.get('/logout', async (req, res, next) => {
         let client_id = await redisClient.get(`oauth:${state}:client_id`);
         let oauth_data_end = await redisClient.get(`oauth:${state}:data`);
         if (oauth_data_end) {
-            await redisClient.del(`oauth:${state}:data`);
+            // await redisClient.del(`oauth:${state}:data`);
             let { id_token, refresh_token } = oauth_data_end;
             let { logout_redirect_uri } = client_ids.find(item => item.client_id === client_id) || {};
             console.log("logout params:", req.query);
