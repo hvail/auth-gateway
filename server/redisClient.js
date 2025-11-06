@@ -3,18 +3,15 @@ const { createClient } = require('redis');
 
 class RedisClient {
     constructor(options = {}) {
-        this.client = createClient({
-            url: options.url || process.env.REDIS_URL || 'redis://localhost:6379',
-            ...(process.env.REDIS_PASSWORD && {
-                password: process.env.REDIS_PASSWORD
-            }),
-            ...(process.env.REDIS_USERNAME && {
-                username: process.env.REDIS_USERNAME
-            }),
-            database: typeof options.database === 'number' ?
-                options.database :
-                (options.db || parseInt(process.env.REDIS_DATABASE) || 0),
-        });
+        var _options = options || {
+            url: process.env.REDIS_URL || 'redis://localhost:6379',
+            database: parseInt(process.env.REDIS_DATABASE) || 0
+        };
+        if(process.env.REDIS_PASSWORD) {
+            _options.username = process.env.REDIS_USERNAME;
+            _options.password = process.env.REDIS_PASSWORD;
+        }
+        this.client = createClient(_options);
 
         this.client.on('error', (err) => {
             console.error('Redis Client Error:', err);
