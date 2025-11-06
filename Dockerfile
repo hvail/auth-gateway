@@ -17,7 +17,7 @@ COPY . .
 EXPOSE 3000
 
 # Define environment variable
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 # Run app.js when the container launches
 CMD ["npm", "start"]
