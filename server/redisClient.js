@@ -5,10 +5,14 @@ class RedisClient {
     constructor(options = {}) {
         this.client = createClient({
             url: options.url || process.env.REDIS_URL || 'redis://localhost:6379',
-            password: options.password || process.env.REDIS_PASSWORD || '',
-            username: options.username || process.env.REDIS_USERNAME || '',
-            database: typeof options.database === 'number' ? 
-                options.database : 
+            ...(process.env.REDIS_PASSWORD && {
+                password: process.env.REDIS_PASSWORD
+            }),
+            ...(process.env.REDIS_USERNAME && {
+                username: process.env.REDIS_USERNAME
+            }),
+            database: typeof options.database === 'number' ?
+                options.database :
                 (options.db || parseInt(process.env.REDIS_DATABASE) || 0),
         });
 
