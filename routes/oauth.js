@@ -10,13 +10,15 @@ var client_ids = [
         client_id: 'ai-manager-client-dev',
         client_secret: 'ai@choco',
         redirect_uri: 'http://localhost:8848/oauth/callback',
-        client_redirect_uri: 'http://localhost:8848/oauth/login'
+        client_redirect_uri: 'http://localhost:8848/oauth/login',
+        logout_redirect_uri: 'http://localhost:8848/oauth/logout',
     },
     {
         client_id: 'ai-manager-client',
         client_secret: 'ai_choco',
         redirect_uri: 'http://ai.hrm2m.com/oauth/callback',
-        client_redirect_uri: 'http://ai.hrm2m.com/oauth/login'
+        client_redirect_uri: 'http://ai.hrm2m.com/oauth/login',
+        logout_redirect_uri: 'http://ai.hrm2m.com/oauth/logout'
     },
     {
         client_id: 'oauth-express-simple-3',
@@ -29,6 +31,17 @@ var client_ids = [
     }
 ]
 
+router.get('/logout', (req, res, next) => {
+    let { oauth_data } = req.cookies;
+    console.log("logout oauth_data:", oauth_data);
+    if (oauth_data) {
+        let { state } = JSON.parse(oauth_data);
+        state_map.delete(state);
+        res.clearCookie('oauth_data', { path: '/' });
+        res.redirect('/');
+    }
+});
+
 router.get('/authorize', (req, res, next) => { 
     let {client_id} = req.query;
     console.log("authorize params:", req.query);
@@ -39,7 +52,6 @@ router.get('/authorize', (req, res, next) => {
 });
 
 router.get('/callback', async (req, res, next) => {
-    // console.log(req.query);
     let { code, state, error } = req.query;
     let client_info = state_map.get(state) || {};
     let { client_id, client_secret, redirect_uri, client_redirect_uri } = client_ids.find(item => item.client_id === client_info.client_id) || {};
@@ -61,16 +73,14 @@ router.get('/callback', async (req, res, next) => {
         },
         body: `grant_type=authorization_code&code=${code}&redirect_uri=${redirect_uri}`
     }
-    console.log("requestOptions", requestOptions);
     let response = await fetch(`${authorize_host}/oauth2/token`, requestOptions);
-    console.log(response);
     let data = await response.json();
     console.log(data);
     let {access_token, id_token, refresh_token, token_type, expires_in, scope} = data;
 
     try {
         const maxAge = (expires_in ? Number(expires_in) * 1000 : 24 * 60 * 60 * 1000);
-        res.cookie('oauth_data', JSON.stringify({ access_token, id_token, refresh_token, token_type, expires_in, scope }), {
+        res.cookie('oauth_data', JSON.stringify({ access_token, id_token, refresh_token, token_type, expires_in, scope, state }), {
             httpOnly: true,
             secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
             sameSite: 'Lax',
@@ -82,8 +92,6 @@ router.get('/callback', async (req, res, next) => {
     }
 
     res.redirect(`${client_redirect_uri}?access_token=${access_token}&id_token=${id_token}&scope=${scope}`);
-
-    // res.render('oauth', { msg: JSON.stringify(data), data: data });
 });
 
 module.exports = router;
