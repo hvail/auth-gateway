@@ -58,7 +58,7 @@ router.get('/logout', async (req, res, next) => {
             console.log("logout params:", req.query);
             console.log("client info:", { client_id, logout_redirect_uri });
             if (redirect_uri) {
-                await redisClient.set(`oauth:${state}:logout:redirect_url`, redirect_uri, { EX: 60 });
+                await redisClient.set(`oauth:${state}:logout:redirect_url`, redirect_uri, 60);
             }
             res.redirect(`${authorize_host}/connect/logout?id_token_hint=${id_token}&post_logout_redirect_uri=${logout_redirect_uri}`);
             return;
@@ -72,7 +72,7 @@ router.get('/authorize', async (req, res, next) => {
     let { client_id } = req.query;
     console.log("authorize params:", req.query);
     let state = Math.random().toString(36).slice(2);
-    await redisClient.set(`oauth:${state}:client_id`, client_id, { EX: 3600 * 24 });
+    await redisClient.set(`oauth:${state}:client_id`, client_id,  3600 * 24 );
     let { redirect_uri } = client_ids.find(item => item.client_id === client_id) || {};
     res.redirect(`${authorize_host}/oauth2/authorize?state=${state}&response_type=code&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=openid device`); ``
 });
@@ -106,9 +106,9 @@ router.get('/callback', async (req, res, next) => {
 
         const ttlSeconds = data.expires_in ? Number(data.expires_in) : 24 * 60 * 60;
         console.log("ttl:", ttlSeconds);
-        await redisClient.set(`oauth:${state}:data`, JSON.stringify(data), { EX: ttlSeconds });
-        await redisClient.set(`oauth:${state}:client`, data.access_token, { EX: ttlSeconds });
-        await redisClient.set(`oauth:${state}:refresh`, data.refresh_token, { EX: 30 * 24 * 60 * 60 });
+        await redisClient.set(`oauth:${state}:data`, JSON.stringify(data), ttlSeconds);
+        await redisClient.set(`oauth:${state}:client`, data.access_token, ttlSeconds);
+        await redisClient.set(`oauth:${state}:refresh`, data.refresh_token, 30 * 24 * 60 * 60);
 
     } catch (err) {
         console.error('Failed to save oauth data to redis', err);
