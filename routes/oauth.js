@@ -7,7 +7,12 @@ var router = express.Router();
 var authorize_host = 'https://oauth2.zshaojie.com';
 
 // var state_map = new Map();
-var redisClient = new RedisClient();
+var redisClient = new RedisClient({
+    url: 'redis://r-bp1l39mzzgh9xcvsf7pd.redis.rds.aliyuncs.com:6379',
+    database: 12,
+    username: 'r-bp1l39mzzgh9xcvsf7',
+    password: 'hrm2m@2025'
+});
 
 var client_ids = [
     {
