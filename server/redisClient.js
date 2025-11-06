@@ -11,6 +11,7 @@ class RedisClient {
             _options.username = process.env.REDIS_USERNAME;
             _options.password = process.env.REDIS_PASSWORD;
         }
+        console.log('Redis options:', _options);
         this.client = createClient(options = _options);
 
         this.client.on('error', (err) => {
