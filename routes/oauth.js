@@ -100,6 +100,7 @@ router.get('/callback', async (req, res, next) => {
     try {
 
         const ttlSeconds = data.expires_in ? Number(data.expires_in) : 24 * 60 * 60;
+        console.log("ttl:", ttlSeconds);
         await redisClient.set(`oauth:${state}:data`, JSON.stringify(data), { EX: ttlSeconds });
         await redisClient.set(`oauth:${state}:refresh`, data.refresh_token, { EX: 30 * 24 * 60 * 60 });
 
