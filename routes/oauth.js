@@ -6,7 +6,6 @@ var router = express.Router();
 
 var authorize_host = 'https://oauth2.zshaojie.com';
 
-var state_map = new Map();
 var redisClient = new RedisClient();
 
 var client_ids = [
@@ -35,24 +34,27 @@ router.get('/logout', async (req, res, next) => {
     let { oauth_data } = req.cookies;
     let { state, redirect_uri, id_token_hint } = req.query;
     if (!state && !id_token_hint) {
+        console.log("auth call logout params:", req.query);
         if (oauth_data) {
             let { state } = JSON.parse(oauth_data);
-            state_map.delete(state);
             res.clearCookie('oauth_data', { path: '/' });
             let web_redirect_url = await redisClient.get(`oauth:${state}:logout:redirect_url`);
             res.redirect(web_redirect_url || '/');
             return;
         }
     } else if (id_token_hint) {
+        console.log("logout by id_token_hint params:", req.query);
+        console.log("redirect to logout url:", `${authorize_host}/connect/logout?id_token_hint=${id_token_hint}`);
         res.redirect(`${authorize_host}/connect/logout?id_token_hint=${id_token_hint}`);
         return;
     } else if (state) {
-        let client_info = state_map.get(state) || {};
+        console.log("logout by state params:", req.query);
+        let client_id = await redisClient.get(`oauth:${state}:client_id`);
         let oauth_data = await redisClient.get(`oauth:${state}:data`);
         if (oauth_data) {
             await redisClient.del(`oauth:${state}:data`);
             let { id_token, refresh_token } = oauth_data;
-            let { client_id, logout_redirect_uri } = client_ids.find(item => item.client_id === client_info.client_id) || {};
+            let { logout_redirect_uri } = client_ids.find(item => item.client_id === client_id) || {};
             console.log("logout params:", req.query);
             console.log("client info:", { client_id, logout_redirect_uri });
             if (redirect_uri) {
@@ -66,19 +68,19 @@ router.get('/logout', async (req, res, next) => {
     res.send({ "msg": "state not found or invalid" });
 });
 
-router.get('/authorize', (req, res, next) => {
+router.get('/authorize', async (req, res, next) => {
     let { client_id } = req.query;
     console.log("authorize params:", req.query);
     let state = Math.random().toString(36).slice(2);
-    state_map.set(state, { timestamp: Date.now(), client_id: client_id });
+    await redisClient.set(`oauth:${state}:client_id`, client_id, { EX: 3600 * 24 });
     let { redirect_uri } = client_ids.find(item => item.client_id === client_id) || {};
     res.redirect(`${authorize_host}/oauth2/authorize?state=${state}&response_type=code&client_id=${client_id}&redirect_uri=${redirect_uri}&scope=openid device`); ``
 });
 
 router.get('/callback', async (req, res, next) => {
     let { code, state, error } = req.query;
-    let client_info = state_map.get(state) || {};
-    let { client_id, client_secret, redirect_uri, client_redirect_uri } = client_ids.find(item => item.client_id === client_info.client_id) || {};
+    let client_id = await redisClient.get(`oauth:${state}:client_id`);
+    let { client_secret, redirect_uri, client_redirect_uri } = client_ids.find(item => item.client_id === client_id) || {};
     console.log("callback params:", req.query);
     console.log("client info:", { client_id, redirect_uri });
     if (error) {
@@ -105,6 +107,7 @@ router.get('/callback', async (req, res, next) => {
         const ttlSeconds = data.expires_in ? Number(data.expires_in) : 24 * 60 * 60;
         console.log("ttl:", ttlSeconds);
         await redisClient.set(`oauth:${state}:data`, JSON.stringify(data), { EX: ttlSeconds });
+        await redisClient.set(`oauth:${state}:client`, data.access_token, { EX: ttlSeconds });
         await redisClient.set(`oauth:${state}:refresh`, data.refresh_token, { EX: 30 * 24 * 60 * 60 });
 
     } catch (err) {
