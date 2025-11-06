@@ -40,6 +40,7 @@ var client_ids = [
 router.get('/logout', async (req, res, next) => {
     let { oauth_data } = req.cookies;
     let { state, redirect_uri, id_token_hint } = req.query;
+    console.log("state:", state);
     if (!state && !id_token_hint) {
         console.log("auth call logout params:", req.query);
         if (oauth_data) {
@@ -52,10 +53,10 @@ router.get('/logout', async (req, res, next) => {
     } else if (state) {
         console.log("logout by state params:", req.query);
         let client_id = await redisClient.get(`oauth:${state}:client_id`);
-        let oauth_data = await redisClient.get(`oauth:${state}:data`);
-        if (oauth_data) {
+        let oauth_data_end = await redisClient.get(`oauth:${state}:data`);
+        if (oauth_data_end) {
             await redisClient.del(`oauth:${state}:data`);
-            let { id_token, refresh_token } = oauth_data;
+            let { id_token, refresh_token } = oauth_data_end;
             let { logout_redirect_uri } = client_ids.find(item => item.client_id === client_id) || {};
             console.log("logout params:", req.query);
             console.log("client info:", { client_id, logout_redirect_uri });
