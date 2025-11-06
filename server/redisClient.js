@@ -7,11 +7,11 @@ class RedisClient {
             url: process.env.REDIS_URL || 'redis://localhost:6379',
             database: parseInt(process.env.REDIS_DATABASE) || 0
         };
-        if(process.env.REDIS_PASSWORD) {
+        if (process.env.REDIS_PASSWORD) {
             _options.username = process.env.REDIS_USERNAME;
             _options.password = process.env.REDIS_PASSWORD;
         }
-        this.client = createClient(_options);
+        this.client = createClient(options = _options);
 
         this.client.on('error', (err) => {
             console.error('Redis Client Error:', err);
