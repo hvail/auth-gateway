@@ -40,7 +40,7 @@ class RedisClient {
     async set(key, value, expireSeconds = null) {
         try {
             if (expireSeconds) {
-                await this.client.setEx(key, seconds = expireSeconds, value);
+                await this.client.setEx(key, expireSeconds.EX, value);
             } else {
                 await this.client.set(key, value);
             }
