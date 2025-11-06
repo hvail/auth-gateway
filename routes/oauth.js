@@ -33,8 +33,8 @@ var client_ids = [
 
 router.get('/logout', async (req, res, next) => {
     let { oauth_data } = req.cookies;
-    let { state, redirect_uri } = req.query;
-    if (!state) {
+    let { state, redirect_uri, id_token_hint } = req.query;
+    if (!state && !id_token_hint) {
         if (oauth_data) {
             let { state } = JSON.parse(oauth_data);
             state_map.delete(state);
@@ -43,7 +43,7 @@ router.get('/logout', async (req, res, next) => {
             res.redirect(web_redirect_url || '/');
             return;
         }
-    } else {
+    } else if (state) {
         let client_info = state_map.get(state) || {};
         let oauth_data = await redisClient.get(`oauth:${state}:data`);
         if (oauth_data) {
@@ -58,6 +58,9 @@ router.get('/logout', async (req, res, next) => {
             res.redirect(`${authorize_host}/connect/logout?id_token_hint=${id_token}&post_logout_redirect_uri=${logout_redirect_uri}`);
             return;
         }
+    } else if (id_token_hint) {
+        res.redirect(`${authorize_host}/connect/logout?id_token_hint=${id_token_hint}`);
+        return;
     }
     // 返回失败
     res.send({ "msg": "state not found or invalid" });
