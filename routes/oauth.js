@@ -43,6 +43,9 @@ router.get('/logout', async (req, res, next) => {
             res.redirect(web_redirect_url || '/');
             return;
         }
+    } else if (id_token_hint) {
+        res.redirect(`${authorize_host}/connect/logout?id_token_hint=${id_token_hint}`);
+        return;
     } else if (state) {
         let client_info = state_map.get(state) || {};
         let oauth_data = await redisClient.get(`oauth:${state}:data`);
@@ -58,9 +61,6 @@ router.get('/logout', async (req, res, next) => {
             res.redirect(`${authorize_host}/connect/logout?id_token_hint=${id_token}&post_logout_redirect_uri=${logout_redirect_uri}`);
             return;
         }
-    } else if (id_token_hint) {
-        res.redirect(`${authorize_host}/connect/logout?id_token_hint=${id_token_hint}`);
-        return;
     }
     // 返回失败
     res.send({ "msg": "state not found or invalid" });
