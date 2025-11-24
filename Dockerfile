@@ -1,6 +1,6 @@
 # Use an official Node runtime as a parent image
-# FROM registry.cn-shenzhen.aliyuncs.com/zshj-sys/node:22.14
-FROM node:20-slim
+FROM registry.cn-shenzhen.aliyuncs.com/zshj-sys/node:22.14
+# FROM node:20-slim
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
